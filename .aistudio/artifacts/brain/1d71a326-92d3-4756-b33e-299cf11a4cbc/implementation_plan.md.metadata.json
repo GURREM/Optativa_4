@@ -1,0 +1,6 @@
+{
+  "summary":  "Plan de implementación para UrbanoAlert: Sistema de Gestión de Incidencias Urbanas basado en el análisis de requerimientos adjunto, con soporte híbrido para Ciudadano y Administrador, mapas OpenStreetMap, compresión de fotos, y persistencia conectable a Supabase con datos demo iniciales.",
+  "updatedAt":  "2026-11-10T01:27:31.253456214Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
