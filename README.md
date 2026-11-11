@@ -68,9 +68,10 @@ Optativa_4/
 ├── src/
 │   ├── components/
 │   │   ├── AdminView.tsx            # Panel de gestión municipal, KPIs, mapa global y actualización de estados
-│   │   ├── AuthModal.tsx            # Modal de inicio de sesión, registro y cambio de perfil demo
-│   │   ├── CitizenView.tsx          # Formulario de nuevo reporte ciudadano e historial personal paginado
-│   │   ├── Navbar.tsx               # Barra de navegación superior, selector de vista y estado de conexión
+│   │   ├── AuthModal.tsx            # Modal de perfil de sesión activa y cierre de sesión
+│   │   ├── CitizenView.tsx          # Formulario de nuevo reporte ciudadano e historial personal
+│   │   ├── LoginView.tsx            # Pantalla de inicio de sesión, registro ciudadano y tarjeta de credenciales
+│   │   ├── Navbar.tsx               # Barra de navegación superior, indicador de rol y cierre de sesión
 │   │   ├── OpenStreetMap.tsx        # Componente reutilizable de mapa interactivo con Leaflet y OpenStreetMap
 │   │   └── SupabaseConfigModal.tsx  # Modal para conectar Supabase en caliente y copiar el esquema SQL
 │   ├── services/
@@ -190,11 +191,11 @@ CREATE POLICY "Actualizacion admin de reportes" ON reportes FOR UPDATE USING (tr
 
 ## 7. Modo Demostración y Cuentas de Prueba
 
-Cuando no se ha configurado una conexión externa a Supabase, **UrbanoAlert** opera en **Modo Local Persistente** con 5 reportes urbanos georreferenciados de muestra y permite alternar con un solo clic desde la barra superior entre los dos actores del sistema:
+Al abrir la aplicación se presenta la pantalla de autenticación (`LoginView`), donde puedes crear una nueva cuenta ciudadana o iniciar sesión con cualquiera de las dos cuentas preconfiguradas del sistema (también disponibles en la tarjeta inferior del Login para autocompletar con un clic):
 
-| Rol | Nombre | Correo Electrónico | Permisos |
-| :--- | :--- | :--- | :--- |
-| **Ciudadano** | Carlos Méndez | `ciudadano@urbanoalert.com` | Crear reportes con foto y GPS, consultar su propio historial y ver respuestas municipales. |
-| **Administrador** | Ing. Patricia Ramos | `admin@municipio.gob` | Visualizar todos los reportes en lista y mapa OpenStreetMap, filtrar por estado, cambiar estados y emitir respuestas oficiales. |
+| Rol | Nombre | Correo Electrónico | Contraseña | Permisos |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ciudadano** | Carlos Méndez | `ciudadano@urbanoalert.com` | `ciudadano123` | Crear reportes con foto y GPS, consultar su propio historial y ver respuestas municipales. |
+| **Administrador** | Ing. Patricia Ramos | `admin@municipio.gob` | `admin123` | Visualizar todos los reportes en lista y mapa OpenStreetMap, filtrar por estado, cambiar estados y emitir respuestas oficiales. |
 
 También puedes restablecer los datos de demostración en cualquier momento desde el panel o el modal de configuración.

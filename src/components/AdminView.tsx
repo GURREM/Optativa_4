@@ -198,29 +198,58 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSupabaseConfig }) =>
       </div>
 
       {/* Barra de Filtros y Búsqueda (RF-3.3) */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* Segmented Filter Buttons */}
-        <div className="flex flex-wrap items-center gap-1 rounded-xl bg-slate-200/70 p-1 dark:bg-slate-800">
-          {(['todos', 'pendiente', 'revisado', 'en_proceso', 'solucionado'] as const).map((st) => (
-            <button
-              key={st}
-              onClick={() => {
-                setFilterEstado(st);
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        {/* Combobox / Selector Desplegable de Estado */}
+        <div className="flex flex-wrap items-center gap-3">
+          <label
+            htmlFor="filtro-estado-combobox"
+            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400"
+          >
+            <svg className="h-4 w-4 text-sky-700 dark:text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <span>Filtrar por estado:</span>
+          </label>
+
+          <div className="relative min-w-[230px]">
+            <select
+              id="filtro-estado-combobox"
+              value={filterEstado}
+              onChange={(e) => {
+                setFilterEstado(e.target.value as EstadoReporte | 'todos');
                 setCurrentPage(1);
               }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
-                filterEstado === st
-                  ? 'bg-white text-sky-900 shadow-sm dark:bg-slate-700 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400'
-              }`}
+              className="w-full appearance-none rounded-xl border border-slate-300 bg-slate-50 py-2 pl-3.5 pr-9 text-xs font-semibold text-slate-800 shadow-2xs transition-colors hover:border-slate-400 focus:border-sky-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 cursor-pointer"
             >
-              {st === 'todos' ? 'Todos' : st.replace('_', ' ')}
+              <option value="todos">📋 Todos los reportes ({countByState.total})</option>
+              <option value="pendiente">🟡 Pendientes ({countByState.pendiente})</option>
+              <option value="revisado">🔵 Revisados ({countByState.revisado})</option>
+              <option value="en_proceso">🟣 En Proceso ({countByState.en_proceso})</option>
+              <option value="solucionado">🟢 Solucionados ({countByState.solucionado})</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
+          {filterEstado !== 'todos' && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterEstado('todos');
+                setCurrentPage(1);
+              }}
+              className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+            >
+              ✕ Limpiar filtro
             </button>
-          ))}
+          )}
         </div>
 
         {/* Input de Búsqueda */}
-        <div className="relative w-full md:w-72">
+        <div className="relative w-full sm:w-72">
           <input
             type="text"
             value={searchQuery}
@@ -228,8 +257,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSupabaseConfig }) =>
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Buscar por título, lugar..."
-            className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs focus:border-sky-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            placeholder="Buscar por título, lugar o vecino..."
+            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs focus:border-sky-600 focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           />
         </div>
       </div>

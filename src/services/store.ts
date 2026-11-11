@@ -2,14 +2,15 @@ import { Reporte, Usuario, EstadoReporte } from '../types';
 import { getSupabaseClient } from './supabaseClient';
 
 const STORAGE_KEY_REPORTES = 'urbano_reportes_v1';
-const STORAGE_KEY_CURRENT_USER = 'urbano_current_user_v1';
-const STORAGE_KEY_USERS = 'urbano_users_v1';
+const STORAGE_KEY_CURRENT_USER = 'urbano_current_user_v2';
+const STORAGE_KEY_USERS = 'urbano_users_v2';
 
-// Usuarios de demostración
+// Usuarios preconfigurados del sistema con credenciales reales
 export const DEMO_CIUDADANO: Usuario = {
   id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
   nombre: 'Carlos Méndez',
   email: 'ciudadano@urbanoalert.com',
+  password_hash: 'ciudadano123',
   rol: 'ciudadano',
   fecha_registro: '2026-02-15T10:30:00Z',
 };
@@ -18,6 +19,7 @@ export const DEMO_ADMIN: Usuario = {
   id: 'b1ffcd88-8b1a-4de7-aa5c-5aa8ac270b22',
   nombre: 'Ing. Patricia Ramos (Administración Municipal)',
   email: 'admin@municipio.gob',
+  password_hash: 'admin123',
   rol: 'admin',
   fecha_registro: '2026-01-10T08:00:00Z',
 };
@@ -150,7 +152,7 @@ const INITIAL_DEMO_REPORTES: Reporte[] = [
 export class AppDataStore {
   private reportes: Reporte[] = [];
   private users: Usuario[] = [];
-  private currentUser: Usuario = DEMO_CIUDADANO;
+  private currentUser: Usuario | null = null;
   private listeners: (() => void)[] = [];
 
   constructor() {
@@ -158,7 +160,7 @@ export class AppDataStore {
   }
 
   private loadFromStorage(): void {
-    // Cargar usuarios
+    // Cargar usuarios asegurando que los usuarios base tengan sus contraseñas configuradas
     try {
       const storedUsers = localStorage.getItem(STORAGE_KEY_USERS);
       if (storedUsers) {
@@ -171,17 +173,16 @@ export class AppDataStore {
       this.users = [DEMO_CIUDADANO, DEMO_ADMIN];
     }
 
-    // Cargar usuario actual
+    // Cargar sesión persistente (RF-1.4): si no ha iniciado sesión, permanece en null (pantalla Login)
     try {
       const storedCurrent = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
       if (storedCurrent) {
         this.currentUser = JSON.parse(storedCurrent);
       } else {
-        this.currentUser = DEMO_CIUDADANO;
-        localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(this.currentUser));
+        this.currentUser = null;
       }
     } catch {
-      this.currentUser = DEMO_CIUDADANO;
+      this.currentUser = null;
     }
 
     // Cargar reportes
@@ -218,22 +219,22 @@ export class AppDataStore {
     this.listeners.forEach((l) => l());
   }
 
-  public getCurrentUser(): Usuario {
+  public getCurrentUser(): Usuario | null {
     return this.currentUser;
   }
 
-  public setCurrentUser(user: Usuario): void {
+  public setCurrentUser(user: Usuario | null): void {
     this.currentUser = user;
-    localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(user));
+    if (user) {
+      localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
+    }
     this.notify();
   }
 
-  public switchRole(role: 'ciudadano' | 'admin'): void {
-    if (role === 'admin') {
-      this.setCurrentUser(DEMO_ADMIN);
-    } else {
-      this.setCurrentUser(DEMO_CIUDADANO);
-    }
+  public logout(): void {
+    this.setCurrentUser(null);
   }
 
   public async getReportes(): Promise<Reporte[]> {
@@ -281,6 +282,10 @@ export class AppDataStore {
     longitud: number;
     foto_url: string;
   }): Promise<Reporte> {
+    if (!this.currentUser) {
+      throw new Error('Debes iniciar sesión para registrar un reporte.');
+    }
+
     const newReporte: Reporte = {
       id: crypto.randomUUID ? crypto.randomUUID() : `rep-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       usuario_id: this.currentUser.id,
@@ -354,11 +359,21 @@ export class AppDataStore {
     return true;
   }
 
-  public registerUser(nombre: string, email: string, password_hash: string): Usuario {
+  public registerUser(nombre: string, email: string, password_hash: string): { user?: Usuario; error?: string } {
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
+    if (existing) {
+      return { error: 'Este correo electrónico ya está registrado. Por favor inicia sesión.' };
+    }
+
+    if (password_hash.length < 6) {
+      return { error: 'La contraseña debe tener al menos 6 caracteres.' };
+    }
+
     const newUser: Usuario = {
       id: crypto.randomUUID ? crypto.randomUUID() : `usr-${Date.now()}`,
       nombre: nombre.trim(),
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       password_hash,
       rol: 'ciudadano', // RF-1.3 Asignación automática obligatoria de rol ciudadano
       fecha_registro: new Date().toISOString(),
@@ -367,17 +382,44 @@ export class AppDataStore {
     this.users.push(newUser);
     localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(this.users));
     this.setCurrentUser(newUser);
-    return newUser;
+
+    // Sincronizar en segundo plano con tabla usuarios de Supabase si está configurado
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      supabase
+        .from('usuarios')
+        .insert([
+          {
+            id: newUser.id,
+            nombre: newUser.nombre,
+            email: newUser.email,
+            password_hash: newUser.password_hash,
+            rol: newUser.rol,
+            fecha_registro: newUser.fecha_registro,
+          },
+        ])
+        .then(({ error }) => {
+          if (error) console.warn('Aviso al sincronizar usuario en Supabase:', error.message);
+        });
+    }
+
+    return { user: newUser };
   }
 
-  public loginUser(email: string, _password?: string): Usuario | null {
-    const found = this.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (found) {
-      this.setCurrentUser(found);
-      return found;
+  public loginUser(email: string, password: string): { user?: Usuario; error?: string } {
+    const normalizedEmail = email.trim().toLowerCase();
+    const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
+
+    if (!found) {
+      return { error: 'No existe ninguna cuenta registrada con este correo electrónico.' };
     }
-    // Si no existe, crear uno rápido para facilitar pruebas fluidas
-    return this.registerUser(email.split('@')[0], email, 'hashed');
+
+    if (found.password_hash && found.password_hash !== password) {
+      return { error: 'Contraseña incorrecta. Verifica tus credenciales e intenta nuevamente.' };
+    }
+
+    this.setCurrentUser(found);
+    return { user: found };
   }
 
   public resetDemoData(): void {
