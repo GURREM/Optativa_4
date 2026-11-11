@@ -2,29 +2,30 @@
 
 **UrbanoAlert** es una plataforma web cívica descentralizada para el reporte ciudadano y la gestión municipal de incidencias urbanas (baches, fallas de alumbrado público, semáforos averiados, acumulación de residuos, aceras dañadas, entre otros).
 
-El sistema integra cartografía libre mediante **OpenStreetMap (Leaflet)**, captura de coordenadas GPS en tiempo real, compresión automática de evidencia fotográfica en el cliente y arquitectura híbrida con **Supabase (Backend-as-a-Service)** y persistencia local (`localStorage`) para funcionar tanto conectado a la nube como en modo demostración sin configuración previa.
+El sistema integra cartografía libre mediante **OpenStreetMap (Leaflet)**, captura de coordenadas GPS en tiempo real, compresión automática de evidencia fotográfica en el cliente, control de acceso basado en roles (**RBAC**) con autenticación de usuarios y arquitectura híbrida con **Supabase (Backend-as-a-Service)** y persistencia local (`localStorage`).
 
 ---
 
 ## Tabla de Contenidos
 
 1. [Características Principales y Requerimientos](#1-características-principales-y-requerimientos)
-2. [Stack Tecnológico](#2-stack-tecnológico)
-3. [Estructura del Proyecto](#3-estructura-del-proyecto)
-4. [Requisitos Previos e Instalación](#4-requisitos-previos-e-instalación)
-5. [Scripts Disponibles](#5-scripts-disponibles)
-6. [Configuración de Supabase y Base de Datos (SQL)](#6-configuración-de-supabase-y-base-de-datos-sql)
-7. [Modo Demostración y Cuentas de Prueba](#7-modo-demostración-y-cuentas-de-prueba)
+2. [Mejoras de Interfaz y Flujo Realista](#2-mejoras-de-interfaz-y-flujo-realista)
+3. [Stack Tecnológico](#3-stack-tecnológico)
+4. [Estructura del Proyecto](#4-estructura-del-proyecto)
+5. [Cómo Ejecutar el Proyecto en Otras Máquinas (Paso a Paso)](#5-cómo-ejecutar-el-proyecto-en-otras-máquinas-paso-a-paso)
+6. [Scripts Disponibles](#6-scripts-disponibles)
+7. [Configuración de Supabase y Base de Datos (SQL)](#7-configuración-de-supabase-y-base-de-datos-sql)
+8. [Cuentas de Acceso del Sistema](#8-cuentas-de-acceso-del-sistema)
 
 ---
 
 ## 1. Características Principales y Requerimientos
 
-### Módulo 1: Autenticación y Gestión de Usuarios
-- **RF-1.1 (Registro):** Creación de cuentas mediante nombre, correo electrónico y contraseña.
-- **RF-1.2 (Inicio de sesión):** Validación de credenciales y cambio rápido entre perfiles de prueba.
-- **RF-1.3 (Rol por defecto):** Asignación automática del rol `ciudadano` a todo nuevo usuario registrado.
-- **RF-1.4 (Sesión persistente):** Almacenamiento seguro del estado de sesión en el navegador (`localStorage`).
+### Módulo 1: Autenticación y Gestión de Usuarios (`LoginView` & `Navbar`)
+- **RF-1.1 (Registro):** Creación de nuevas cuentas mediante nombre completo, correo electrónico único y contraseña (mínimo 6 caracteres), con sincronización automática a Supabase si está conectado.
+- **RF-1.2 (Inicio de sesión):** Pantalla de Login obligatoria (`LoginView.tsx`) con validación real de correo y contraseña contra el almacén de usuarios.
+- **RF-1.3 (Rol por defecto y Control de Acceso RBAC):** Asignación automática del rol `ciudadano` a todo nuevo usuario registrado. Separación estricta de vistas: un ciudadano solo puede acceder al Portal Ciudadano y un administrador solo a la Consola Municipal.
+- **RF-1.4 (Sesión persistente y Cierre de Sesión):** Almacenamiento seguro del estado de sesión en `localStorage` (`urbano_current_user_v2`) y menú desplegable en la esquina superior izquierda para consultar los detalles de la cuenta o cerrar sesión.
 
 ### Módulo 2: Interfaz Ciudadano (`CitizenView`)
 - **RF-2.1 (Geolocalización GPS):** Captura automática de latitud y longitud del dispositivo mediante la API de Geolocalización del navegador o selección interactiva en el mapa.
@@ -34,31 +35,44 @@ El sistema integra cartografía libre mediante **OpenStreetMap (Leaflet)**, capt
 - **RF-2.5 (Seguimiento en tiempo real):** Consulta del estado actual (`pendiente`, `revisado`, `en_proceso`, `solucionado`) y de la respuesta oficial emitida por la administración municipal (`respuesta_admin`).
 
 ### Módulo 3: Interfaz Administrador (`AdminView`)
-- **RF-3.1 (Bandeja global):** Tablero de control con indicadores clave (KPIs) y listado completo de incidencias reportadas en el municipio.
-- **RF-3.2 (Cartografía OpenStreetMap):** Mapa interactivo con marcadores diferenciados por color según el estado del reporte e inspección detallada.
-- **RF-3.3 (Filtros y búsqueda):** Filtrado rápido por estado de incidencia y búsqueda por texto.
-- **RF-3.4 y RF-3.5 (Gestión del ciclo de vida):** Actualización del estado del reporte y registro de la respuesta técnica u orden de servicio municipal (`respuesta_admin`).
+- **RF-3.1 (Bandeja global):** Tablero de control municipal con listado completo de incidencias reportadas en la ciudad.
+- **RF-3.2 (Cartografía OpenStreetMap):** Mapa interactivo global con marcadores diferenciados por color según el estado del reporte e inspección directa al hacer clic en cualquier pin.
+- **RF-3.3 (Filtro Combobox y búsqueda):** Selector desplegable (**Combobox**) de estados con contadores en tiempo real (`Todos`, `Pendientes`, `Revisados`, `En Proceso`, `Solucionados`), botón de limpieza rápida de filtro y buscador por título, lugar o vecino.
+- **RF-3.4 y RF-3.5 (Gestión del ciclo de vida):** Modal de gestión para actualizar el estado del reporte y registrar la respuesta técnica u orden de servicio municipal (`respuesta_admin`).
 
 ### Requerimientos No Funcionales (RNF)
-- **RNF-1 (Compresión de imagen):** Toda imagen adjuntada se redimensiona (máximo `1400px`) y comprime en formato JPEG al **55% de calidad** mediante HTML5 Canvas antes de enviarse o almacenarse, reduciendo el consumo de ancho de banda y almacenamiento.
-- **RNF-2 (Eficiencia de red y paginación):** Los listados de reportes implementan paginación en cliente/servidor para optimizar la visualización.
+- **RNF-1 (Compresión de imagen):** Toda imagen adjuntada se redimensiona (máximo `1400px`) y comprime en formato JPEG al **55% de calidad** mediante HTML5 Canvas antes de enviarse o almacenarse, reduciendo el consumo de red.
+- **RNF-2 (Eficiencia de red y paginación):** Los listados de reportes implementan paginación (`6 reportes por página`).
 - **RNF-3 (Integridad relacional):** Eliminación en cascada (`ON DELETE CASCADE`) entre `usuarios` y `reportes`.
 - **RNF-4 (Validación de estados):** Restricciones `CHECK` en PostgreSQL para roles (`ciudadano`, `admin`) y estados (`pendiente`, `revisado`, `en_proceso`, `solucionado`).
 - **RNF-5 (Seguridad RLS):** Políticas de *Row Level Security* en Supabase para proteger el acceso a las tablas.
 
 ---
 
-## 2. Stack Tecnológico
+## 2. Mejoras de Interfaz y Flujo Realista
+
+1. **Pantalla de Login a pantalla completa (`src/components/LoginView.tsx`):**
+   - Bloquea el acceso hasta que el usuario inicie sesión o se registre.
+   - Incluye una tarjeta inferior de **Credenciales de Acceso** para autocompletar con un clic los datos de **Ciudadano** o **Administrador** durante pruebas y demostraciones.
+2. **Menú desplegable de usuario en la esquina superior izquierda (`src/components/Navbar.tsx`):**
+   - Muestra el avatar con las iniciales del usuario, su nombre y su rol.
+   - Al desplegarse permite ver el correo electrónico, rol activo, abrir el modal **Detalles de la Cuenta** (`AuthModal.tsx`) o ejecutar **Cerrar Sesión**.
+3. **Combobox de filtrado con contadores en tiempo real (`src/components/AdminView.tsx`):**
+   - Integra las opciones de filtrado de estado en un selector desplegable limpio que muestra cuántos reportes existen en cada estado y permite limpiar el filtro con un clic.
+
+---
+
+## 3. Stack Tecnológico
 
 - **Frontend Framework:** React 19 + TypeScript
 - **Bundler / Entorno de Desarrollo:** Vite 8
-- **Estilos e Interfaz:** Tailwind CSS v4 + Lucide React (iconografía)
+- **Estilos e Interfaz:** Tailwind CSS v4 + Lucide React
 - **Mapas y Geolocalización:** Leaflet (`leaflet` + `@types/leaflet`) con teselas gratuitas de **OpenStreetMap**
 - **Backend-as-a-Service (BaaS):** Supabase (`@supabase/supabase-js`) con fallback automático a `localStorage`
 
 ---
 
-## 3. Estructura del Proyecto
+## 4. Estructura del Proyecto
 
 ```text
 Optativa_4/
@@ -67,19 +81,19 @@ Optativa_4/
 │       └── AnalisisDeRequerimientos.md  # Documento de especificación de requerimientos
 ├── src/
 │   ├── components/
-│   │   ├── AdminView.tsx            # Panel de gestión municipal, KPIs, mapa global y actualización de estados
-│   │   ├── AuthModal.tsx            # Modal de perfil de sesión activa y cierre de sesión
-│   │   ├── CitizenView.tsx          # Formulario de nuevo reporte ciudadano e historial personal
+│   │   ├── AdminView.tsx            # Consola municipal, mapa global, combobox de filtros y gestión de estados
+│   │   ├── AuthModal.tsx            # Modal de detalles de la cuenta activa y cierre de sesión
+│   │   ├── CitizenView.tsx          # Formulario de nuevo reporte ciudadano con GPS/foto e historial personal
 │   │   ├── LoginView.tsx            # Pantalla de inicio de sesión, registro ciudadano y tarjeta de credenciales
-│   │   ├── Navbar.tsx               # Barra de navegación superior, indicador de rol y cierre de sesión
+│   │   ├── Navbar.tsx               # Barra superior con botón desplegable de usuario en esquina superior izquierda
 │   │   ├── OpenStreetMap.tsx        # Componente reutilizable de mapa interactivo con Leaflet y OpenStreetMap
 │   │   └── SupabaseConfigModal.tsx  # Modal para conectar Supabase en caliente y copiar el esquema SQL
 │   ├── services/
-│   │   ├── store.ts                 # Almacén reactivo de datos con sincronización híbrida (Supabase + localStorage)
+│   │   ├── store.ts                 # Almacén reactivo con autenticación real y sincronización (Supabase + localStorage)
 │   │   └── supabaseClient.ts        # Inicialización del cliente Supabase, pruebas de conexión y esquema SQL
 │   ├── utils/
 │   │   └── imageCompressor.ts       # Compresor de imágenes vía Canvas (calidad 55%, máx. 1400px)
-│   ├── App.tsx                      # Componente raíz de la aplicación
+│   ├── App.tsx                      # Componente raíz y enrutamiento protegido por rol (RBAC)
 │   ├── index.css                    # Estilos globales e importación de Tailwind CSS y Leaflet
 │   ├── main.tsx                     # Punto de entrada de React
 │   └── types.ts                     # Definiciones de tipos e interfaces TypeScript
@@ -93,64 +107,91 @@ Optativa_4/
 
 ---
 
-## 4. Requisitos Previos e Instalación
+## 5. Cómo Ejecutar el Proyecto en Otras Máquinas (Paso a Paso)
 
-### Requisitos Previos
-- **Node.js:** v20.19+ o v22.12+ recomendado (funciona también en v20.x).
-- **npm:** v10+
+Sigue esta guía para clonar o copiar el proyecto y ejecutarlo en cualquier otra computadora (**Windows, macOS o Linux**):
 
-### Pasos de Instalación
-
-1. **Clonar o abrir el directorio del proyecto:**
+### 5.1. Requisitos Previos en la Máquina Destino
+1. Instalar **Node.js** (versión **20.19+** o **22.12+** LTS recomendada, descargable desde [nodejs.org](https://nodejs.org/)).
+2. Verificar en la terminal que Node y npm estén instalados:
    ```bash
-   cd D:\Optativa_4
+   node -v
+   npm -v
    ```
 
-2. **Instalar las dependencias:**
-   Debido a las restricciones de versiones peer entre Vite 8 y esbuild, instala las dependencias ejecutando:
-   ```bash
-   npm install --legacy-peer-deps
-   ```
-   > **Nota para usuarios de Windows:** Si al ejecutar Vite aparece un error de módulo nativo faltante de `rolldown` (`Cannot find module '@rolldown/binding-win32-x64-msvc'`), ejecuta:
-   > ```bash
-   > npm install @rolldown/binding-win32-x64-msvc --no-save --legacy-peer-deps
-   > ```
+### 5.2. Copiar o Clonar el Proyecto
+- **Si usas Git:**
+  ```bash
+  git clone <URL_DEL_REPOSITORIO>
+  cd Optativa_4
+  ```
+- **Si copias la carpeta por USB / ZIP:**
+  > **Importante:** Copia el proyecto **sin** la carpeta `node_modules` ni `dist` (así el archivo pesará pocos megabytes y evitarás conflictos de binarios entre distintos sistemas operativos).
 
-3. **Variables de entorno (Opcional):**
-   La aplicación **no requiere** configurar variables de entorno ni API Keys para ejecutarse, ya que cuenta con persistencia local y un configurador visual de Supabase dentro de la propia interfaz.
-   Si deseas preconfigurar Supabase mediante variables de entorno, puedes crear un archivo `.env.local` en la raíz:
-   ```env
-   VITE_SUPABASE_URL="https://tu-proyecto.supabase.co"
-   VITE_SUPABASE_ANON_KEY="tu-anon-key-publica"
-   ```
+### 5.3. Instalar Dependencias
+Abre una terminal dentro de la carpeta del proyecto y ejecuta:
 
-4. **Iniciar el servidor de desarrollo:**
-   ```bash
-   npm run dev
-   ```
-   La aplicación estará disponible en: **http://localhost:3000/**
+```bash
+npm install --legacy-peer-deps
+```
+
+#### Solución según el Sistema Operativo (Windows / macOS / Linux)
+Vite 8 utiliza `rolldown`, el cual requiere un binario nativo para el sistema operativo donde se ejecuta. Si el archivo `package-lock.json` fue generado en otro sistema operativo y al ejecutar `npm run dev` aparece el error `Cannot find native binding` / `Cannot find module '@rolldown/binding-...'`, aplica una de estas dos opciones:
+
+- **Opción A (En Windows x64 - Más rápida):**
+  ```bash
+  npm install @rolldown/binding-win32-x64-msvc --no-save --legacy-peer-deps
+  ```
+- **Opción B (En cualquier SO: Windows, macOS o Linux):**
+  Borra `node_modules` y `package-lock.json` y vuelve a instalar:
+  ```bash
+  # En PowerShell (Windows):
+  Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
+  npm install --legacy-peer-deps
+
+  # En Bash (macOS / Linux):
+  rm -rf node_modules package-lock.json
+  npm install --legacy-peer-deps
+  ```
+
+### 5.4. Variables de Entorno (Opcional)
+**No es obligatorio configurar ningún archivo `.env` ni API Key** para ejecutar la aplicación: el proyecto funciona inmediatamente con su base de datos local y permite configurar Supabase desde la interfaz gráfica.
+
+Si deseas dejar preconfigurada la conexión a Supabase en esa máquina, crea un archivo `.env.local` en la raíz del proyecto:
+```env
+VITE_SUPABASE_URL="https://tu-proyecto.supabase.co"
+VITE_SUPABASE_ANON_KEY="tu-anon-key-publica"
+```
+
+### 5.5. Iniciar la Aplicación
+Ejecuta el servidor de desarrollo:
+```bash
+npm run dev
+```
+
+La terminal mostrará dos enlaces:
+- **En la misma computadora (Local):** `http://localhost:3000/`
+- **Desde celulares u otras PCs en la misma red Wi-Fi/LAN (Network):** `http://<IP_LOCAL_DE_LA_MAQUINA>:3000/` (por ejemplo `http://192.168.1.3:3000/`), ya que el script `dev` está configurado con `--host=0.0.0.0`.
 
 ---
 
-## 5. Scripts Disponibles
-
-En el archivo `package.json` se encuentran definidos los siguientes comandos:
+## 6. Scripts Disponibles
 
 | Comando | Descripción |
 | :--- | :--- |
-| `npm run dev` | Inicia el servidor de desarrollo de Vite en el puerto `3000` (`http://localhost:3000`). |
-| `npm run build` | Compila la aplicación para producción en la carpeta `dist/`. |
+| `npm run dev` | Inicia el servidor de desarrollo de Vite en el puerto `3000` expuesto en red local (`--host=0.0.0.0`). |
+| `npm run build` | Compila y empaqueta la aplicación para producción en la carpeta `dist/`. |
 | `npm run preview` | Sirve localmente la compilación de producción generada en `dist/`. |
 | `npm run lint` | Ejecuta la verificación estática de tipos con TypeScript (`tsc --noEmit`). |
 | `npm run clean` | Elimina los artefactos compilados (`dist/`). |
 
 ---
 
-## 6. Configuración de Supabase y Base de Datos (SQL)
+## 7. Configuración de Supabase y Base de Datos (SQL)
 
-El sistema puede conectarse a cualquier proyecto de **Supabase** directamente desde la interfaz haciendo clic en el botón **"Supabase"** de la barra de navegación superior, o mediante variables de entorno.
+El sistema puede conectarse a cualquier proyecto de **Supabase** directamente desde la interfaz haciendo clic en el botón **"Base de Datos Local · SQL"** / **"Supabase Conectado"** de la esquina superior derecha.
 
-Para preparar la base de datos en Supabase, abre el **SQL Editor** de tu proyecto en Supabase y ejecuta el siguiente script SQL:
+Para preparar las tablas en Supabase, abre el **SQL Editor** de tu proyecto en Supabase y ejecuta el siguiente script SQL:
 
 ```sql
 -- 1. Tabla de Usuarios
@@ -189,13 +230,11 @@ CREATE POLICY "Actualizacion admin de reportes" ON reportes FOR UPDATE USING (tr
 
 ---
 
-## 7. Modo Demostración y Cuentas de Prueba
+## 8. Cuentas de Acceso del Sistema
 
-Al abrir la aplicación se presenta la pantalla de autenticación (`LoginView`), donde puedes crear una nueva cuenta ciudadana o iniciar sesión con cualquiera de las dos cuentas preconfiguradas del sistema (también disponibles en la tarjeta inferior del Login para autocompletar con un clic):
+Al abrir la aplicación se presenta la pantalla de autenticación (`LoginView`), donde puedes registrar una nueva cuenta ciudadana o iniciar sesión con cualquiera de las dos cuentas preconfiguradas (disponibles también en la tarjeta inferior del Login para autocompletar con un clic):
 
-| Rol | Nombre | Correo Electrónico | Contraseña | Permisos |
+| Rol | Nombre | Correo Electrónico | Contraseña | Permisos y Vista Asignada |
 | :--- | :--- | :--- | :--- | :--- |
-| **Ciudadano** | Carlos Méndez | `ciudadano@urbanoalert.com` | `ciudadano123` | Crear reportes con foto y GPS, consultar su propio historial y ver respuestas municipales. |
-| **Administrador** | Ing. Patricia Ramos | `admin@municipio.gob` | `admin123` | Visualizar todos los reportes en lista y mapa OpenStreetMap, filtrar por estado, cambiar estados y emitir respuestas oficiales. |
-
-También puedes restablecer los datos de demostración en cualquier momento desde el panel o el modal de configuración.
+| **Ciudadano** | Carlos Méndez | `ciudadano@urbanoalert.com` | `ciudadano123` | Acceso exclusivo al **Portal Ciudadano**: crear reportes con foto comprimida y GPS, y consultar el estado y respuesta oficial de sus propios reportes. |
+| **Administrador** | Ing. Patricia Ramos | `admin@municipio.gob` | `admin123` | Acceso exclusivo al **Panel Administrador**: visualizar todos los reportes en lista y mapa OpenStreetMap, filtrar mediante combobox por estado, actualizar estados y emitir respuestas oficiales. |
