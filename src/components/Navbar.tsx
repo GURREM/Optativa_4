@@ -1,23 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Usuario } from '../types';
-import { getSavedSupabaseConfig } from '../services/supabaseClient';
 
 interface NavbarProps {
   currentUser: Usuario;
   onOpenAuth: () => void;
   onLogout: () => void;
-  onOpenSupabaseConfig: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuth,
   onLogout,
-  onOpenSupabaseConfig,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const supabaseConfig = getSavedSupabaseConfig();
 
   // Cerrar el menú desplegable al hacer clic fuera
   useEffect(() => {
@@ -136,7 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Nombre de la App y Badge del Portal */}
           <div className="flex items-center gap-2.5">
             <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
-              UrbanoAlert
+              ReporteUrbano
             </span>
             <span
               className={`hidden md:inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
@@ -148,25 +144,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               {currentUser.rol === 'admin' ? '🏛️ Panel Administrador' : '👤 Portal Ciudadano'}
             </span>
           </div>
-        </div>
-
-        {/* Esquina Superior Derecha: Estado de Base de Datos / Supabase */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={onOpenSupabaseConfig}
-            title="Configuración de Backend Supabase y Esquema SQL"
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700/60 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
-          >
-            <span
-              className={`h-2 w-2 rounded-full ${
-                supabaseConfig.connected ? 'bg-emerald-500' : 'bg-amber-400'
-              }`}
-            />
-            <span className="hidden sm:inline">
-              {supabaseConfig.connected ? 'Supabase Conectado' : 'Base de Datos Local'}
-            </span>
-            <span className="text-[10px] text-slate-400">· SQL</span>
-          </button>
         </div>
       </div>
     </header>

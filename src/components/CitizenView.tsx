@@ -112,12 +112,12 @@ export const CitizenView: React.FC<CitizenViewProps> = ({ currentUser }) => {
     setFormError(null);
 
     if (!titulo.trim()) {
-      setFormError('El título es obligatorio (RF-2.3).');
+      setFormError('El título es obligatorio.');
       return;
     }
 
     if (!compressionResult) {
-      setFormError('Debes adjuntar una fotografía de evidencia (RF-2.2).');
+      setFormError('Debes adjuntar una fotografía de evidencia.');
       return;
     }
 
@@ -276,7 +276,7 @@ export const CitizenView: React.FC<CitizenViewProps> = ({ currentUser }) => {
 
                 {compressing && (
                   <div className="mt-3 text-xs text-sky-700 dark:text-sky-400 font-medium animate-pulse">
-                    Comprimiendo imagen al 55% según requerimiento RNF-1...
+                    Optimizando fotografía para envío rápido...
                   </div>
                 )}
 
@@ -293,16 +293,16 @@ export const CitizenView: React.FC<CitizenViewProps> = ({ currentUser }) => {
                     />
                     <div className="space-y-1 text-xs">
                       <div className="font-semibold text-slate-900 dark:text-white">
-                        Compresión RNF-1 Completada
+                        Fotografía Optimizada Lista
                       </div>
                       <div className="text-slate-500 font-mono">
-                        Original: <span className="font-semibold text-slate-700 dark:text-slate-300">{compressionResult.originalSizeKB} KB</span>
+                        Tamaño original: <span className="font-semibold text-slate-700 dark:text-slate-300">{compressionResult.originalSizeKB} KB</span>
                       </div>
                       <div className="text-slate-500 font-mono">
-                        Comprimido (55%): <span className="font-semibold text-emerald-600">{compressionResult.compressedSizeKB} KB</span>
+                        Tamaño optimizado: <span className="font-semibold text-emerald-600">{compressionResult.compressedSizeKB} KB</span>
                       </div>
                       <div className="inline-flex rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-                        Ahorro de red: -{compressionResult.compressionRatioPercent}%
+                        Ahorro de datos: -{compressionResult.compressionRatioPercent}%
                       </div>
                     </div>
                   </div>
@@ -310,11 +310,11 @@ export const CitizenView: React.FC<CitizenViewProps> = ({ currentUser }) => {
               </div>
             </div>
 
-            {/* Geolocalización GPS y OpenStreetMap (RF-2.1) */}
+            {/* Geolocalización GPS y OpenStreetMap */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Ubicación GPS (OpenStreetMap) <span className="text-rose-500">* (RF-2.1)</span>
+                  Ubicación GPS (OpenStreetMap) <span className="text-rose-500">*</span>
                 </label>
                 <button
                   type="button"

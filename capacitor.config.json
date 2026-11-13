@@ -1,0 +1,8 @@
+{
+  "appId": "com.reporteurbano.app",
+  "appName": "ReporteUrbano",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

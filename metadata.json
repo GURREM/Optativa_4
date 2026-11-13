@@ -1,5 +1,5 @@
 {
-  "name": "UrbanoAlert - Gestión de Incidencias Urbanas",
+  "name": "ReporteUrbano - Gestión de Incidencias Urbanas",
   "description": "Sistema de reporte ciudadano y gestión municipal de incidencias urbanas con OpenStreetMap, geolocalización y sincronización Supabase.",
   "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

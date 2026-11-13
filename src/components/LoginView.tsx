@@ -1,25 +1,20 @@
 import React, { useState } from 'react';
 import { Usuario } from '../types';
 import { dataStore, DEMO_CIUDADANO, DEMO_ADMIN } from '../services/store';
-import { getSavedSupabaseConfig } from '../services/supabaseClient';
 
 interface LoginViewProps {
   onLoginSuccess: (user: Usuario) => void;
-  onOpenSupabaseConfig: () => void;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({
-  onLoginSuccess,
-  onOpenSupabaseConfig,
-}) => {
+export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabaseConfig = getSavedSupabaseConfig();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -28,18 +23,23 @@ export const LoginView: React.FC<LoginViewProps> = ({
       return;
     }
 
-    const result = dataStore.loginUser(email, password);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
+    setLoading(true);
+    try {
+      const result = await dataStore.loginUser(email, password);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
 
-    if (result.user) {
-      onLoginSuccess(result.user);
+      if (result.user) {
+        onLoginSuccess(result.user);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -48,14 +48,19 @@ export const LoginView: React.FC<LoginViewProps> = ({
       return;
     }
 
-    const result = dataStore.registerUser(nombre, email, password);
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
+    setLoading(true);
+    try {
+      const result = await dataStore.registerUser(nombre, email, password);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
 
-    if (result.user) {
-      onLoginSuccess(result.user);
+      if (result.user) {
+        onLoginSuccess(result.user);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,29 +78,17 @@ export const LoginView: React.FC<LoginViewProps> = ({
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-800 font-bold text-white shadow-sm">
-              UA
+              RU
             </div>
             <div>
               <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-                UrbanoAlert
+                ReporteUrbano
               </span>
               <span className="ml-2 hidden rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 sm:inline-block dark:bg-slate-800 dark:text-slate-400">
                 Gestión de Incidencias Urbanas
               </span>
             </div>
           </div>
-
-          <button
-            onClick={onOpenSupabaseConfig}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          >
-            <span
-              className={`h-2 w-2 rounded-full ${
-                supabaseConfig.connected ? 'bg-emerald-500' : 'bg-amber-400'
-              }`}
-            />
-            <span>{supabaseConfig.connected ? 'Supabase Conectado' : 'Base de Datos Local'}</span>
-          </button>
         </div>
       </header>
 
@@ -183,9 +176,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-sky-800 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-sky-700 transition-colors cursor-pointer"
+                disabled={loading}
+                className="w-full rounded-xl bg-sky-800 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-sky-700 transition-colors cursor-pointer disabled:opacity-50"
               >
-                Ingresar al Sistema
+                {loading ? 'Verificando...' : 'Ingresar al Sistema'}
               </button>
             </form>
           ) : (
@@ -234,14 +228,15 @@ export const LoginView: React.FC<LoginViewProps> = ({
               </div>
 
               <div className="rounded-lg bg-slate-50 p-2.5 text-[11px] text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
-                ℹ️ Se asignará automáticamente el perfil de <strong>Ciudadano</strong> (RF-1.3).
+                ℹ️ Se asignará automáticamente el perfil de <strong>Ciudadano</strong>.
               </div>
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-sky-800 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-sky-700 transition-colors cursor-pointer"
+                disabled={loading}
+                className="w-full rounded-xl bg-sky-800 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-sky-700 transition-colors cursor-pointer disabled:opacity-50"
               >
-                Registrarme e Ingresar
+                {loading ? 'Creando cuenta...' : 'Registrarme e Ingresar'}
               </button>
             </form>
           )}
@@ -296,7 +291,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
       {/* Pie de página */}
       <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900">
-        <strong>UrbanoAlert</strong> · Plataforma Cívica de Gestión de Incidencias Urbanas
+        <strong>ReporteUrbano</strong> · Plataforma Cívica de Gestión de Incidencias Urbanas
       </footer>
     </div>
   );

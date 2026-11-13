@@ -11,12 +11,10 @@ import { CitizenView } from './components/CitizenView';
 import { AdminView } from './components/AdminView';
 import { AuthModal } from './components/AuthModal';
 import { LoginView } from './components/LoginView';
-import { SupabaseConfigModal } from './components/SupabaseConfigModal';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<Usuario | null>(dataStore.getCurrentUser());
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [supabaseModalOpen, setSupabaseModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = dataStore.subscribe(() => {
@@ -31,18 +29,7 @@ export default function App() {
   };
 
   if (!currentUser) {
-    return (
-      <>
-        <LoginView
-          onLoginSuccess={(user) => setCurrentUser(user)}
-          onOpenSupabaseConfig={() => setSupabaseModalOpen(true)}
-        />
-        <SupabaseConfigModal
-          isOpen={supabaseModalOpen}
-          onClose={() => setSupabaseModalOpen(false)}
-        />
-      </>
-    );
+    return <LoginView onLoginSuccess={(user) => setCurrentUser(user)} />;
   }
 
   return (
@@ -52,19 +39,18 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={() => setAuthModalOpen(true)}
         onLogout={handleLogout}
-        onOpenSupabaseConfig={() => setSupabaseModalOpen(true)}
       />
 
       {/* Contenido Principal según el rol autenticado */}
       <main className="flex-1">
         {currentUser.rol === 'admin' ? (
-          <AdminView onOpenSupabaseConfig={() => setSupabaseModalOpen(true)} />
+          <AdminView />
         ) : (
           <CitizenView currentUser={currentUser} />
         )}
       </main>
 
-      {/* Modales de Control */}
+      {/* Modal de Perfil */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
@@ -72,21 +58,14 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      <SupabaseConfigModal
-        isOpen={supabaseModalOpen}
-        onClose={() => setSupabaseModalOpen(false)}
-      />
-
       {/* Pie de Página Cívico */}
       <footer className="border-t border-slate-200 bg-white py-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-4 px-4 text-xs text-slate-500">
           <div>
-            <strong>UrbanoAlert</strong> · Plataforma Cívica Descentralizada de Incidencias Urbanas
+            <strong>ReporteUrbano</strong> · Plataforma Cívica de Gestión de Incidencias Urbanas
           </div>
           <div className="flex items-center gap-4">
-            <span>Mapas provistos por OpenStreetMap</span>
-            <span>·</span>
-            <span>Compatible con Supabase BaaS</span>
+            <span>Cartografía OpenStreetMap</span>
           </div>
         </div>
       </footer>

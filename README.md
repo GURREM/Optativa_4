@@ -1,6 +1,6 @@
-# UrbanoAlert - Gestión de Incidencias Urbanas
+# ReporteUrbano - Gestión de Incidencias Urbanas
 
-**UrbanoAlert** es una plataforma web cívica descentralizada para el reporte ciudadano y la gestión municipal de incidencias urbanas (baches, fallas de alumbrado público, semáforos averiados, acumulación de residuos, aceras dañadas, entre otros).
+**ReporteUrbano** es una plataforma web y móvil cívica descentralizada para el reporte ciudadano y la gestión municipal de incidencias urbanas (baches, fallas de alumbrado público, semáforos averiados, acumulación de residuos, aceras dañadas, entre otros).
 
 El sistema integra cartografía libre mediante **OpenStreetMap (Leaflet)**, captura de coordenadas GPS en tiempo real, compresión automática de evidencia fotográfica en el cliente, control de acceso basado en roles (**RBAC**) con autenticación de usuarios y arquitectura híbrida con **Supabase (Backend-as-a-Service)** y persistencia local (`localStorage`).
 

@@ -40,9 +40,17 @@ CREATE POLICY "Insercion de reportes" ON reportes FOR INSERT WITH CHECK (true);
 CREATE POLICY "Actualizacion admin de reportes" ON reportes FOR UPDATE USING (true);
 `;
 
+const DEFAULT_SUPABASE_URL = 'https://yonwsgwgmgqrwfwiajzo.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_Rul0p7dBsWHydOyzRt9kbg_KO0EBVnC';
+
 export function getSavedSupabaseConfig(): SupabaseConfig {
-  const envUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
-  const envKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
+  const env = (import.meta as any).env || {};
+  const envUrl = env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const envKey =
+    env.VITE_SUPABASE_ANON_KEY ||
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    DEFAULT_SUPABASE_KEY;
 
   const storedUrl = localStorage.getItem(STORAGE_KEY_URL) || envUrl;
   const storedKey = localStorage.getItem(STORAGE_KEY_KEY) || envKey;

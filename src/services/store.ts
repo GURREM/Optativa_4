@@ -1,11 +1,11 @@
 import { Reporte, Usuario, EstadoReporte } from '../types';
 import { getSupabaseClient } from './supabaseClient';
 
-const STORAGE_KEY_REPORTES = 'urbano_reportes_v1';
+const STORAGE_KEY_REPORTES = 'urbano_reportes_real_v1';
 const STORAGE_KEY_CURRENT_USER = 'urbano_current_user_v2';
 const STORAGE_KEY_USERS = 'urbano_users_v2';
 
-// Usuarios preconfigurados del sistema con credenciales reales
+// Usuarios preconfigurados del sistema para las tarjetas de acceso rápido
 export const DEMO_CIUDADANO: Usuario = {
   id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
   nombre: 'Carlos Méndez',
@@ -24,131 +24,6 @@ export const DEMO_ADMIN: Usuario = {
   fecha_registro: '2026-01-10T08:00:00Z',
 };
 
-// Generador de imágenes SVG elegantes y realistas para incidentes urbanos de muestra
-function createIncidentIllustration(type: 'bache' | 'luminaria' | 'semaforo' | 'basura' | 'acera'): string {
-  const configs = {
-    bache: {
-      bg: '#334155',
-      accent: '#E2E8F0',
-      icon: '<path d="M20 70 Q 50 50, 90 65 T 160 60 Q 180 80, 150 90 T 70 85 Z" fill="#1E293B" stroke="#64748B" stroke-width="4"/><circle cx="100" cy="72" r="14" fill="#0F172A"/><path d="M40 30 L80 30" stroke="#F59E0B" stroke-width="6" stroke-linecap="round"/>',
-      text: 'BACHE EN ASFALTO',
-      sub: 'Calle Los Álamos 450'
-    },
-    luminaria: {
-      bg: '#1E293B',
-      accent: '#FDE047',
-      icon: '<path d="M100 110 L100 30 Q 100 15, 120 15 L130 15" fill="none" stroke="#94A3B8" stroke-width="6"/><circle cx="130" cy="22" r="12" fill="#FACC15"/><path d="M110 35 L150 85 L90 85 Z" fill="#FEF08A" opacity="0.4"/>',
-      text: 'LUMINARIA APAGADA',
-      sub: 'Av. Libertador c/ Potosí'
-    },
-    semaforo: {
-      bg: '#0F172A',
-      accent: '#EF4444',
-      icon: '<rect x="80" y="20" width="40" height="85" rx="8" fill="#1E293B" stroke="#475569" stroke-width="4"/><circle cx="100" cy="38" r="9" fill="#EF4444"/><circle cx="100" cy="62" r="9" fill="#F59E0B" opacity="0.3"/><circle cx="100" cy="86" r="9" fill="#10B981" opacity="0.3"/><rect x="96" y="105" width="8" height="20" fill="#64748B"/>',
-      text: 'SEMÁFORO INTERMITENTE',
-      sub: 'Cruce Av. 6 de Agosto'
-    },
-    basura: {
-      bg: '#334155',
-      accent: '#10B981',
-      icon: '<path d="M60 45 L140 45 L130 100 L70 100 Z" fill="#475569" stroke="#64748B" stroke-width="4"/><path d="M75 45 L80 25 L120 25 L125 45" fill="none" stroke="#94A3B8" stroke-width="4"/><line x1="85" y1="55" x2="85" y2="90" stroke="#CBD5E1" stroke-width="3"/><line x1="100" y1="55" x2="100" y2="90" stroke="#CBD5E1" stroke-width="3"/><line x1="115" y1="55" x2="115" y2="90" stroke="#CBD5E1" stroke-width="3"/>',
-      text: 'RESIDUOS ACUMULADOS',
-      sub: 'Plaza 25 de Mayo'
-    },
-    acera: {
-      bg: '#475569',
-      accent: '#CBD5E1',
-      icon: '<rect x="30" y="30" width="140" height="65" fill="#334155" stroke="#94A3B8" stroke-width="3"/><line x1="60" y1="30" x2="85" y2="95" stroke="#0F172A" stroke-width="5"/><line x1="85" y1="65" x2="120" y2="50" stroke="#0F172A" stroke-width="4"/><line x1="120" y1="50" x2="140" y2="95" stroke="#0F172A" stroke-width="4"/>',
-      text: 'ACERA FRACTURADA',
-      sub: 'Pasaje San Alberto 120'
-    }
-  };
-
-  const item = configs[type];
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" width="100%" height="100%">
-    <rect width="200" height="130" fill="${item.bg}"/>
-    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-    </pattern>
-    <rect width="200" height="130" fill="url(#grid)"/>
-    ${item.icon}
-    <rect x="0" y="98" width="200" height="32" fill="rgba(15,23,42,0.85)"/>
-    <text x="12" y="112" font-family="system-ui, sans-serif" font-weight="700" font-size="9" fill="${item.accent}">${item.text}</text>
-    <text x="12" y="123" font-family="system-ui, sans-serif" font-size="8" fill="#94A3B8">${item.sub}</text>
-  </svg>`;
-
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
-// Datos de prueba iniciales georreferenciados en una ciudad (coordenadas cívicas realistas)
-const INITIAL_DEMO_REPORTES: Reporte[] = [
-  {
-    id: 'c1111111-1111-4111-8111-111111111111',
-    usuario_id: DEMO_CIUDADANO.id,
-    usuario_nombre: DEMO_CIUDADANO.nombre,
-    titulo: 'Bache de gran profundidad en carril derecho',
-    descripcion: 'Peligro inminente para motocicletas y vehículos ligeros. El bache tiene aproximadamente 15 cm de profundidad tras las últimas lluvias torrenciales.',
-    latitud: -16.50345000,
-    longitud: -68.13256000,
-    foto_url: createIncidentIllustration('bache'),
-    estado: 'en_proceso',
-    respuesta_admin: 'Inspección técnica realizada el 20/02/2026. Se programó bacheo con mezcla asfáltica en caliente con cuadrilla nocturna.',
-    fecha_creacion: '2026-02-18T14:20:00Z',
-  },
-  {
-    id: 'c2222222-2222-4222-8222-222222222222',
-    usuario_id: DEMO_CIUDADANO.id,
-    usuario_nombre: DEMO_CIUDADANO.nombre,
-    titulo: 'Luminaria pública apagada en esquina oscura',
-    descripcion: 'Poste metálico con foco LED intermitente y ahora totalmente apagado. Genera inseguridad en las noches al salir de la parada de bus.',
-    latitud: -16.50789000,
-    longitud: -68.12845000,
-    foto_url: createIncidentIllustration('luminaria'),
-    estado: 'revisado',
-    respuesta_admin: 'Reporte ingresado al sistema de Alumbrado Público. Número de orden de servicio #AL-204.',
-    fecha_creacion: '2026-02-22T20:45:00Z',
-  },
-  {
-    id: 'c3333333-3333-4333-8333-333333333333',
-    usuario_id: 'a9999999-9999-4999-8999-999999999999',
-    usuario_nombre: 'Mariana Flores (Vecina)',
-    titulo: 'Semáforo peatonal no cambia a luz verde',
-    descripcion: 'El semáforo frente al colegio permanece siempre en rojo para peatones, obligando a niños y ancianos a cruzar con riesgo.',
-    latitud: -16.51230000,
-    longitud: -68.13670000,
-    foto_url: createIncidentIllustration('semaforo'),
-    estado: 'pendiente',
-    respuesta_admin: null,
-    fecha_creacion: '2026-02-25T09:15:00Z',
-  },
-  {
-    id: 'c4444444-4444-4444-8444-444444444444',
-    usuario_id: DEMO_CIUDADANO.id,
-    usuario_nombre: DEMO_CIUDADANO.nombre,
-    titulo: 'Acera levantada por raíces de árbol',
-    descripcion: 'Las baldosas se encuentran totalmente partidas y levantadas 10 cm, imposibilitando el tránsito de sillas de ruedas o coches de bebé.',
-    latitud: -16.49870000,
-    longitud: -68.13990000,
-    foto_url: createIncidentIllustration('acera'),
-    estado: 'solucionado',
-    respuesta_admin: 'Cuadrilla de Obras Públicas niveló la acera y reparó el alcorque del árbol el 24/02/2026. Trabajo concluido.',
-    fecha_creacion: '2026-02-12T11:00:00Z',
-  },
-  {
-    id: 'c5555555-5555-4555-8555-555555555555',
-    usuario_id: 'a8888888-8888-4888-8888-888888888888',
-    usuario_nombre: 'Rodrigo Morales',
-    titulo: 'Contenedor desbordado y escombros',
-    descripcion: 'Acumulación de bolsas plásticas y escombros de construcción fuera del contenedor asignado.',
-    latitud: -16.51650000,
-    longitud: -68.12510000,
-    foto_url: createIncidentIllustration('basura'),
-    estado: 'pendiente',
-    respuesta_admin: null,
-    fecha_creacion: '2026-02-26T07:30:00Z',
-  },
-];
-
 export class AppDataStore {
   private reportes: Reporte[] = [];
   private users: Usuario[] = [];
@@ -160,7 +35,6 @@ export class AppDataStore {
   }
 
   private loadFromStorage(): void {
-    // Cargar usuarios asegurando que los usuarios base tengan sus contraseñas configuradas
     try {
       const storedUsers = localStorage.getItem(STORAGE_KEY_USERS);
       if (storedUsers) {
@@ -173,29 +47,18 @@ export class AppDataStore {
       this.users = [DEMO_CIUDADANO, DEMO_ADMIN];
     }
 
-    // Cargar sesión persistente (RF-1.4): si no ha iniciado sesión, permanece en null (pantalla Login)
     try {
       const storedCurrent = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
-      if (storedCurrent) {
-        this.currentUser = JSON.parse(storedCurrent);
-      } else {
-        this.currentUser = null;
-      }
+      this.currentUser = storedCurrent ? JSON.parse(storedCurrent) : null;
     } catch {
       this.currentUser = null;
     }
 
-    // Cargar reportes
     try {
       const storedReportes = localStorage.getItem(STORAGE_KEY_REPORTES);
-      if (storedReportes) {
-        this.reportes = JSON.parse(storedReportes);
-      } else {
-        this.reportes = INITIAL_DEMO_REPORTES;
-        localStorage.setItem(STORAGE_KEY_REPORTES, JSON.stringify(this.reportes));
-      }
+      this.reportes = storedReportes ? JSON.parse(storedReportes) : [];
     } catch {
-      this.reportes = INITIAL_DEMO_REPORTES;
+      this.reportes = [];
     }
   }
 
@@ -241,16 +104,28 @@ export class AppDataStore {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase
-          .from('reportes')
-          .select('*')
-          .order('fecha_creacion', { ascending: false });
+        const [{ data: repData, error: repError }, { data: usrData }] = await Promise.all([
+          supabase.from('reportes').select('*').order('fecha_creacion', { ascending: false }),
+          supabase.from('usuarios').select('id, nombre'),
+        ]);
 
-        if (!error && data && data.length > 0) {
-          this.reportes = data.map((d: any) => ({
+        const userNameMap: Record<string, string> = {};
+        for (const u of this.users) {
+          userNameMap[u.id] = u.nombre;
+        }
+        if (usrData) {
+          for (const u of usrData as any[]) {
+            if (u.id && u.nombre) {
+              userNameMap[u.id] = u.nombre;
+            }
+          }
+        }
+
+        if (!repError && repData) {
+          this.reportes = repData.map((d: any) => ({
             id: d.id,
             usuario_id: d.usuario_id,
-            usuario_nombre: d.usuario_nombre || 'Usuario Ciudadano',
+            usuario_nombre: d.usuario_nombre || userNameMap[d.usuario_id] || 'Ciudadano',
             titulo: d.titulo,
             descripcion: d.descripcion,
             latitud: Number(d.latitud),
@@ -263,7 +138,7 @@ export class AppDataStore {
           this.saveReportes();
         }
       } catch (err) {
-        console.warn('Error fetching from Supabase, using local fallback:', err);
+        console.warn('Error consultando Supabase, usando respaldo local:', err);
       }
     }
 
@@ -287,7 +162,9 @@ export class AppDataStore {
     }
 
     const newReporte: Reporte = {
-      id: crypto.randomUUID ? crypto.randomUUID() : `rep-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: crypto.randomUUID
+        ? crypto.randomUUID()
+        : `rep-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       usuario_id: this.currentUser.id,
       usuario_nombre: this.currentUser.nombre,
       titulo: newReporteData.titulo.trim(),
@@ -295,19 +172,32 @@ export class AppDataStore {
       latitud: Number(newReporteData.latitud.toFixed(8)),
       longitud: Number(newReporteData.longitud.toFixed(8)),
       foto_url: newReporteData.foto_url,
-      estado: 'pendiente', // RF-2.5 estado inicial obligatorio
+      estado: 'pendiente',
       respuesta_admin: null,
       fecha_creacion: new Date().toISOString(),
     };
 
-    // Intentar sincronizar con Supabase si está disponible
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('reportes').insert([
+        await supabase.from('usuarios').upsert(
+          [
+            {
+              id: this.currentUser.id,
+              nombre: this.currentUser.nombre,
+              email: this.currentUser.email,
+              password_hash: this.currentUser.password_hash || 'ciudadano123',
+              rol: this.currentUser.rol,
+            },
+          ],
+          { onConflict: 'id', ignoreDuplicates: true }
+        );
+
+        const { error: insertErr } = await supabase.from('reportes').insert([
           {
             id: newReporte.id,
             usuario_id: newReporte.usuario_id,
+            usuario_nombre: newReporte.usuario_nombre,
             titulo: newReporte.titulo,
             descripcion: newReporte.descripcion,
             latitud: newReporte.latitud,
@@ -317,8 +207,24 @@ export class AppDataStore {
             fecha_creacion: newReporte.fecha_creacion,
           },
         ]);
+
+        if (insertErr) {
+          await supabase.from('reportes').insert([
+            {
+              id: newReporte.id,
+              usuario_id: newReporte.usuario_id,
+              titulo: newReporte.titulo,
+              descripcion: newReporte.descripcion,
+              latitud: newReporte.latitud,
+              longitud: newReporte.longitud,
+              foto_url: newReporte.foto_url,
+              estado: newReporte.estado,
+              fecha_creacion: newReporte.fecha_creacion,
+            },
+          ]);
+        }
       } catch (err) {
-        console.warn('Could not insert directly to Supabase, saved locally:', err);
+        console.warn('No se pudo insertar directamente en Supabase, guardado localmente:', err);
       }
     }
 
@@ -351,7 +257,7 @@ export class AppDataStore {
           })
           .eq('id', reporteId);
       } catch (err) {
-        console.warn('Could not update directly to Supabase, updated locally:', err);
+        console.warn('No se pudo actualizar en Supabase, actualizado localmente:', err);
       }
     }
 
@@ -359,15 +265,37 @@ export class AppDataStore {
     return true;
   }
 
-  public registerUser(nombre: string, email: string, password_hash: string): { user?: Usuario; error?: string } {
+  public async registerUser(
+    nombre: string,
+    email: string,
+    password_hash: string
+  ): Promise<{ user?: Usuario; error?: string }> {
     const normalizedEmail = email.trim().toLowerCase();
-    const existing = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
-    if (existing) {
-      return { error: 'Este correo electrónico ya está registrado. Por favor inicia sesión.' };
-    }
 
     if (password_hash.length < 6) {
       return { error: 'La contraseña debe tener al menos 6 caracteres.' };
+    }
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data: existingRemote } = await supabase
+          .from('usuarios')
+          .select('id')
+          .ilike('email', normalizedEmail)
+          .maybeSingle();
+
+        if (existingRemote) {
+          return { error: 'Este correo electrónico ya está registrado. Por favor inicia sesión.' };
+        }
+      } catch (err) {
+        console.warn('Aviso al verificar correo en Supabase:', err);
+      }
+    }
+
+    const existingLocal = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
+    if (existingLocal) {
+      return { error: 'Este correo electrónico ya está registrado. Por favor inicia sesión.' };
     }
 
     const newUser: Usuario = {
@@ -375,20 +303,13 @@ export class AppDataStore {
       nombre: nombre.trim(),
       email: normalizedEmail,
       password_hash,
-      rol: 'ciudadano', // RF-1.3 Asignación automática obligatoria de rol ciudadano
+      rol: 'ciudadano',
       fecha_registro: new Date().toISOString(),
     };
 
-    this.users.push(newUser);
-    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(this.users));
-    this.setCurrentUser(newUser);
-
-    // Sincronizar en segundo plano con tabla usuarios de Supabase si está configurado
-    const supabase = getSupabaseClient();
     if (supabase) {
-      supabase
-        .from('usuarios')
-        .insert([
+      try {
+        const { error } = await supabase.from('usuarios').insert([
           {
             id: newUser.id,
             nombre: newUser.nombre,
@@ -397,17 +318,66 @@ export class AppDataStore {
             rol: newUser.rol,
             fecha_registro: newUser.fecha_registro,
           },
-        ])
-        .then(({ error }) => {
-          if (error) console.warn('Aviso al sincronizar usuario en Supabase:', error.message);
-        });
+        ]);
+        if (error) {
+          console.warn('Aviso al sincronizar usuario en Supabase:', error.message);
+        }
+      } catch (err) {
+        console.warn('Error al registrar usuario en Supabase:', err);
+      }
     }
+
+    this.users.push(newUser);
+    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(this.users));
+    this.setCurrentUser(newUser);
 
     return { user: newUser };
   }
 
-  public loginUser(email: string, password: string): { user?: Usuario; error?: string } {
+  public async loginUser(
+    email: string,
+    password: string
+  ): Promise<{ user?: Usuario; error?: string }> {
     const normalizedEmail = email.trim().toLowerCase();
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data: remoteUser } = await supabase
+          .from('usuarios')
+          .select('*')
+          .ilike('email', normalizedEmail)
+          .maybeSingle();
+
+        if (remoteUser) {
+          if (remoteUser.password_hash && remoteUser.password_hash !== password) {
+            return { error: 'Contraseña incorrecta. Verifica tus credenciales e intenta nuevamente.' };
+          }
+
+          const loggedUser: Usuario = {
+            id: remoteUser.id,
+            nombre: remoteUser.nombre,
+            email: remoteUser.email,
+            password_hash: remoteUser.password_hash,
+            rol: remoteUser.rol,
+            fecha_registro: remoteUser.fecha_registro,
+          };
+
+          const localIdx = this.users.findIndex((u) => u.email.toLowerCase() === normalizedEmail);
+          if (localIdx >= 0) {
+            this.users[localIdx] = loggedUser;
+          } else {
+            this.users.push(loggedUser);
+          }
+          localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(this.users));
+          this.setCurrentUser(loggedUser);
+          return { user: loggedUser };
+        }
+      } catch (err) {
+        console.warn('Aviso al consultar usuario en Supabase, verificando localmente:', err);
+      }
+    }
+
     const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
 
     if (!found) {
@@ -418,13 +388,27 @@ export class AppDataStore {
       return { error: 'Contraseña incorrecta. Verifica tus credenciales e intenta nuevamente.' };
     }
 
+    // Si es una cuenta base preconfigurada y aún no estaba en Supabase, sincronizarla
+    if (supabase) {
+      supabase
+        .from('usuarios')
+        .upsert(
+          [
+            {
+              id: found.id,
+              nombre: found.nombre,
+              email: found.email,
+              password_hash: found.password_hash || password,
+              rol: found.rol,
+            },
+          ],
+          { onConflict: 'id', ignoreDuplicates: true }
+        )
+        .then(() => {});
+    }
+
     this.setCurrentUser(found);
     return { user: found };
-  }
-
-  public resetDemoData(): void {
-    this.reportes = [...INITIAL_DEMO_REPORTES];
-    this.saveReportes();
   }
 }
 

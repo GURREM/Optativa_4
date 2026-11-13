@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { Reporte, EstadoReporte } from '../types';
+import { ReportUrgencyInfo, URGENCY_RADIUS_METERS } from '../utils/urgencyDetector';
 
 interface OpenStreetMapProps {
   mode: 'picker' | 'viewer';
   reports?: Reporte[];
+  urgencyMap?: Record<string, ReportUrgencyInfo>;
   selectedLocation?: { lat: number; lng: number };
   onLocationSelect?: (lat: number, lng: number) => void;
   onSelectReport?: (report: Reporte) => void;
@@ -30,12 +32,13 @@ const STATUS_LABELS: Record<EstadoReporte, string> = {
 export const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
   mode,
   reports = [],
+  urgencyMap,
   selectedLocation,
   onLocationSelect,
   onSelectReport,
   className = 'h-96 w-full',
   zoom = 14,
-  center = [-16.505, -68.132], // Default urban center
+  center = [-16.505, -68.132],
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -47,7 +50,7 @@ export const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
     if (!mapContainerRef.current) return;
 
     if (!mapInstanceRef.current) {
-      const initialCenter = selectedLocation ? [selectedLocation.lat, selectedLocation.lng] as [number, number] : center;
+      const initialCenter = selectedLocation ? ([selectedLocation.lat, selectedLocation.lng] as [number, number]) : center;
       const map = L.map(mapContainerRef.current, {
         center: initialCenter,
         zoom,
@@ -140,10 +143,45 @@ export const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
     const latLngs: L.LatLngExpression[] = [];
 
     reports.forEach((rep) => {
-      const color = STATUS_COLORS[rep.estado] || '#64748B';
+      const urgency = urgencyMap?.[rep.id];
+      const isUrgent = Boolean(urgency?.isUrgent);
+      const color = isUrgent ? '#DC2626' : STATUS_COLORS[rep.estado] || '#64748B';
       const statusLabel = STATUS_LABELS[rep.estado] || rep.estado;
 
-      const markerHtml = `
+      // Si es urgente, dibujar el círculo real de 10 metros en el mapa para el Administrador
+      if (isUrgent) {
+        const radiusCircle = L.circle([rep.latitud, rep.longitud], {
+          radius: URGENCY_RADIUS_METERS,
+          color: '#DC2626',
+          weight: 2,
+          dashArray: '4 4',
+          fillColor: '#EF4444',
+          fillOpacity: 0.2,
+        });
+        markersGroup.addLayer(radiusCircle);
+      }
+
+      const markerHtml = isUrgent
+        ? `
+        <div style="
+          background-color: #DC2626;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          border: 3px solid #FEF2F2;
+          box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.35), 0 4px 10px rgba(0,0,0,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 13px;
+          cursor: pointer;
+        ">
+          <span>🚨</span>
+        </div>
+      `
+        : `
         <div style="
           background-color: ${color};
           width: 28px;
@@ -167,9 +205,9 @@ export const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
       const customIcon = L.divIcon({
         className: 'custom-report-pin',
         html: markerHtml,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-        popupAnchor: [0, -14],
+        iconSize: isUrgent ? [34, 34] : [28, 28],
+        iconAnchor: isUrgent ? [17, 17] : [14, 14],
+        popupAnchor: [0, isUrgent ? -17 : -14],
       });
 
       const marker = L.marker([rep.latitud, rep.longitud], { icon: customIcon });
@@ -177,13 +215,23 @@ export const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
       const popupContent = document.createElement('div');
       popupContent.className = 'text-left min-w-[200px] max-w-[260px]';
       popupContent.innerHTML = `
-        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: ${color}; margin-bottom: 2px;">
+        ${
+          isUrgent
+            ? `<div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; font-size: 10px; font-weight: 800; padding: 3px 6px; border-radius: 4px; margin-bottom: 5px; text-transform: uppercase;">
+                🚨 URGENTE · ${urgency?.distinctUsersCount} vecinos en ≤${URGENCY_RADIUS_METERS}m
+              </div>`
+            : ''
+        }
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: ${
+          STATUS_COLORS[rep.estado] || '#64748B'
+        }; margin-bottom: 2px;">
           ${statusLabel}
         </div>
         <div style="font-weight: 600; font-size: 13px; color: #0F172A; margin-bottom: 4px; line-height: 1.25;">
           ${rep.titulo}
         </div>
         <div style="font-size: 11px; color: #64748B; margin-bottom: 8px;">
+          👤 ${rep.usuario_nombre || 'Ciudadano'}<br/>
           Lat: ${rep.latitud.toFixed(5)} · Lng: ${rep.longitud.toFixed(5)}
         </div>
         ${
@@ -195,7 +243,7 @@ export const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
         }
         <button id="btn-inspect-${rep.id}" style="
           width: 100%;
-          background: #0F172A;
+          background: ${isUrgent ? '#DC2626' : '#0F172A'};
           color: #ffffff;
           font-size: 11px;
           font-weight: 600;
@@ -227,7 +275,7 @@ export const OpenStreetMap: React.FC<OpenStreetMapProps> = ({
       const bounds = L.latLngBounds(latLngs);
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
-  }, [reports, mode, onSelectReport]);
+  }, [reports, urgencyMap, mode, onSelectReport]);
 
   return (
     <div className={`relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 ${className}`}>

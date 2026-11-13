@@ -33,7 +33,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         <div className="mt-4 space-y-4">
           <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/40">
-            <div className="text-xs text-slate-500">Sesión autenticada activa (RF-1.4)</div>
+            <div className="text-xs text-slate-500">Sesión autenticada activa</div>
             <div className="mt-1 font-semibold text-slate-900 dark:text-white text-base">
               {currentUser.nombre}
             </div>
