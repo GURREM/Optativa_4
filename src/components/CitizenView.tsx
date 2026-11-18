@@ -367,7 +367,33 @@ export const CitizenView: React.FC<CitizenViewProps> = ({ currentUser }) => {
       {/* Pestaña 2: Historial Exclusivo Ciudadano (RF-2.4 y RF-2.5) */}
       {activeTab === 'historial' && (
         <div className="space-y-4">
-          {loadingReports ? (
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Historial y Estado de Mis Incidencias
+            </h2>
+            <button
+              type="button"
+              onClick={() => loadReports()}
+              disabled={loadingReports}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-sky-800 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-sky-700 transition-colors disabled:opacity-60 cursor-pointer"
+            >
+              <svg
+                className={`h-3.5 w-3.5 ${loadingReports ? 'animate-spin' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <span>{loadingReports ? 'Actualizando...' : 'Actualizar Estados'}</span>
+            </button>
+          </div>
+          {loadingReports && misReportes.length === 0 ? (
             <div className="p-8 text-center text-sm text-slate-500">Cargando tus reportes...</div>
           ) : misReportes.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-900">

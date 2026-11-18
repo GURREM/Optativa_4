@@ -32,6 +32,18 @@ export class AppDataStore {
 
   constructor() {
     this.loadFromStorage();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (
+          e.key === STORAGE_KEY_REPORTES ||
+          e.key === STORAGE_KEY_USERS ||
+          e.key === STORAGE_KEY_CURRENT_USER
+        ) {
+          this.loadFromStorage();
+          this.notify();
+        }
+      });
+    }
   }
 
   private loadFromStorage(): void {
@@ -62,12 +74,16 @@ export class AppDataStore {
     }
   }
 
-  private saveReportes(): void {
+  private persistReportesToStorage(): void {
     try {
       localStorage.setItem(STORAGE_KEY_REPORTES, JSON.stringify(this.reportes));
     } catch (err) {
       console.warn('Error al guardar reportes en localStorage', err);
     }
+  }
+
+  private saveReportes(): void {
+    this.persistReportesToStorage();
     this.notify();
   }
 
@@ -135,10 +151,19 @@ export class AppDataStore {
             respuesta_admin: d.respuesta_admin,
             fecha_creacion: d.fecha_creacion,
           }));
-          this.saveReportes();
+          this.persistReportesToStorage();
         }
       } catch (err) {
         console.warn('Error consultando Supabase, usando respaldo local:', err);
+      }
+    } else {
+      try {
+        const storedReportes = localStorage.getItem(STORAGE_KEY_REPORTES);
+        if (storedReportes) {
+          this.reportes = JSON.parse(storedReportes);
+        }
+      } catch {
+        // Mantener copia en memoria si falla el parseo
       }
     }
 
@@ -239,11 +264,12 @@ export class AppDataStore {
     respuestaAdmin?: string | null
   ): Promise<boolean> {
     const index = this.reportes.findIndex((r) => r.id === reporteId);
-    if (index === -1) return false;
-
-    this.reportes[index].estado = nuevoEstado;
-    if (respuestaAdmin !== undefined) {
-      this.reportes[index].respuesta_admin = respuestaAdmin;
+    if (index !== -1) {
+      this.reportes[index] = {
+        ...this.reportes[index],
+        estado: nuevoEstado,
+        ...(respuestaAdmin !== undefined ? { respuesta_admin: respuestaAdmin } : {}),
+      };
     }
 
     const supabase = getSupabaseClient();
